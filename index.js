@@ -103,13 +103,24 @@ var serialNumber = function (cb, cmdPrefix) {
 
 	if (serialNumber.preferUUID) vals.reverse();
 
-	exec(cmdPrefix + cmd + vals[0], function (error, stdout) {
-		if (error || parseResult(stdout).length > 1) {
-			stdoutHandler(error, stdout);
-		} else {
-			exec(cmdPrefix + cmd + vals[1], stdoutHandler);
-		}
-	});
+
+	
+var wmicResult,wmicError,child;
+  child = exec(cmdPrefix + cmd + vals[0], function (error, stdout, stderr) {
+    	wmicError = error || stderr;
+    	if (wmicError || parseResult(stdout).length > 1) {
+      		console.log("root path open failed" + error + stderr);
+      		stdoutHandler(wmicError, stdout);
+      		return;
+    	}
+    wmicResult = stdout;
+  });
+  child.stdin.end();   // stop the input pipe, in order to run in windows xp
+  child.on('close', function (code) {
+    console.log("wmic close:: code:" + code);
+    stdoutHandler(wmicError, wmicResult);
+    child.kill();
+  });
 };
 
 serialNumber.preferUUID = false;
